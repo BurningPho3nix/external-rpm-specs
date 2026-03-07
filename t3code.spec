@@ -18,7 +18,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -143,7 +143,7 @@ EOF
 fi
 
 install -d "%{buildroot}%{_datadir}/icons/hicolor/512x512/apps"
-install -pm0644 "apps/desktop/resources/icon.png" \
+install -pm0644 "assets/prod/black-universal-1024.png" \
   "%{buildroot}%{_datadir}/icons/hicolor/512x512/apps/%{name}.png"
 
 %files
@@ -155,6 +155,9 @@ install -pm0644 "apps/desktop/resources/icon.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Sat Mar 07 2026 Codex <codex@openai.com> - 0.0.4-4
+- Use `assets/prod/black-universal-1024.png` as the installed desktop icon
+
 * Sat Mar 07 2026 Codex <codex@openai.com> - 0.0.4-3
 - Use Fedora's `nodejs-npm` package name for the bundled npm/node-gyp tooling
 - Resolve Fedora's versioned npm path dynamically
