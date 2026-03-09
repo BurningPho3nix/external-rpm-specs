@@ -1,6 +1,6 @@
 %global debug_package %{nil}
 %undefine _disable_source_fetch
-%global app_version 0.0.4
+%global app_version 0.0.8
 %global bun_version 1.3.9
 %global github_owner pingdotgg
 %global github_repo t3code
@@ -18,7 +18,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        4%{?dist}
+Release:        1%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
