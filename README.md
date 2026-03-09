@@ -1,5 +1,5 @@
 # external-rpm-specs
-This repo is for rpmspec-files to package project that I don't own for rpm-based distros
+This repo is for rpmspec-files to package projects that I don't own for rpm-based distros
 
 current specs for:
 
