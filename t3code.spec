@@ -1,6 +1,6 @@
 %global debug_package %{nil}
 %undefine _disable_source_fetch
-%global app_version 0.0.10
+%global app_version 0.0.11
 %global bun_version 1.3.9
 %global github_owner pingdotgg
 %global github_repo t3code
