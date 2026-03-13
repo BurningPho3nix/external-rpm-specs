@@ -18,7 +18,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -146,6 +146,34 @@ install -d "%{buildroot}%{_datadir}/icons/hicolor/512x512/apps"
 install -pm0644 "assets/prod/black-universal-1024.png" \
   "%{buildroot}%{_datadir}/icons/hicolor/512x512/apps/%{name}.png"
 
+%post
+brew_bin=""
+for candidate in \
+  "$(command -v brew 2>/dev/null)" \
+  /home/linuxbrew/.linuxbrew/bin/brew \
+  /usr/local/bin/brew \
+  /opt/homebrew/bin/brew
+do
+  if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+    brew_bin="$candidate"
+    break
+  fi
+done
+
+if [ -n "$brew_bin" ]; then
+  install -d /usr/lib/environment.d
+  cat > /usr/lib/environment.d/999-brew.conf <<EOF
+PATH=$(dirname "$brew_bin"):\$PATH
+EOF
+else
+  rm -f /usr/lib/environment.d/999-brew.conf
+fi
+
+%postun
+if [ "$1" -eq 0 ]; then
+  rm -f /usr/lib/environment.d/999-brew.conf
+fi
+
 %files
 %license LICENSE
 %doc README.md
@@ -155,6 +183,10 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Fri Mar 13 2026 Codex <codex@openai.com> - 0.0.11-2
+- Add a `%post` hook to create `/usr/lib/environment.d/999-brew.conf` when Homebrew is installed
+- Remove the generated Homebrew environment file when the package is erased or Homebrew is not detected
+
 * Sat Mar 07 2026 Codex <codex@openai.com> - 0.0.4-4
 - Use `assets/prod/black-universal-1024.png` as the installed desktop icon
 
