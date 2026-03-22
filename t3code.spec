@@ -1,4 +1,5 @@
 %global debug_package %{nil}
+%global __requires_exclude ^lib(dl\\.so\\.2|pthread\\.so\\.0)\\(GLIBC_[^)]*\\)\\(64bit\\)$
 %undefine _disable_source_fetch
 %global app_version 0.0.13
 %global bun_version 1.3.9
@@ -9,16 +10,18 @@
 %ifarch x86_64
 %global electron_arch x64
 %global bun_pkg bun-linux-x64-baseline
+%global claude_vendor_foreign_arch arm64-linux
 %endif
 %ifarch aarch64
 %global electron_arch arm64
 %global bun_pkg bun-linux-aarch64
+%global claude_vendor_foreign_arch x64-linux
 %endif
 %{!?electron_arch:%{error:Unsupported arch %{_target_cpu}; supported arches are x86_64 and aarch64}}
 
 Name:           t3code
 Version:        %{app_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -30,9 +33,10 @@ BuildArch:      %{_target_cpu}
 BuildRequires:  curl
 BuildRequires:  gcc-c++
 BuildRequires:  make
-BuildRequires:  nodejs >= 24.13.1
-BuildRequires:  nodejs-npm
+BuildRequires:  nodejs(engine) >= 24.13.1
+BuildRequires:  npm
 BuildRequires:  python3
+BuildRequires:  vips-devel
 Requires:       xdg-utils
 
 %description
@@ -74,6 +78,21 @@ export npm_config_node_gyp="$node_gyp_js"
 test -f "$npm_config_node_gyp"
 
 bun install --frozen-lockfile
+
+# The staged production install inside `dist:desktop:artifact` must rebuild
+# native Electron modules from source instead of bundling upstream prebuilts.
+electron_version="$(node -p 'require("./apps/desktop/package.json").dependencies.electron')"
+test -n "$electron_version"
+pkg-config --modversion vips-cpp
+export npm_config_runtime=electron
+export npm_config_target="$electron_version"
+export npm_config_arch="%{electron_arch}"
+export npm_config_target_arch="%{electron_arch}"
+export npm_config_disturl="https://electronjs.org/headers"
+export npm_config_build_from_source=true
+export npm_config_platform=linux
+export npm_config_libc=glibc
+export SHARP_FORCE_GLOBAL_LIBVIPS=1
 bun run dist:desktop:artifact -- \
   --platform linux \
   --target tar.gz \
@@ -100,6 +119,10 @@ cp -a "$appdir"/. "%{buildroot}%{_libexecdir}/%{name}/"
 # Drop unused native addons that trigger invalid RPM deps on glibc-based Fedora.
 find "%{buildroot}%{_libexecdir}/%{name}" -type f -name '*.musl.node' -delete
 rm -rf "%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modules/node-pty/prebuilds"
+find "%{buildroot}%{_libexecdir}/%{name}" -type d \
+  \( -path '*/node_modules/@img/sharp-*' -o -path '*/node_modules/@img/sharp-libvips-*' \) \
+  -prune -exec rm -rf '{}' +
+find "%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modules/@anthropic-ai/claude-agent-sdk/vendor" -type d -name '%{claude_vendor_foreign_arch}' -prune -exec rm -rf '{}' +
 
 if [ -f "%{buildroot}%{_libexecdir}/%{name}/chrome-sandbox" ]; then
   chmod 4755 "%{buildroot}%{_libexecdir}/%{name}/chrome-sandbox"
