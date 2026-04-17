@@ -2,7 +2,7 @@
 %global __requires_exclude ^lib(dl\\.so\\.2|pthread\\.so\\.0)\\(GLIBC_[^)]*\\)\\(64bit\\)$
 %undefine _disable_source_fetch
 %global app_version 0.0.20
-%global bun_version 1.3.9
+%global bun_version 1.3.11
 %global github_owner pingdotgg
 %global github_repo t3code
 %global release_tag v%{app_version}
