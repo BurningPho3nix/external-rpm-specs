@@ -122,7 +122,10 @@ rm -rf "%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modu
 find "%{buildroot}%{_libexecdir}/%{name}" -type d \
   \( -path '*/node_modules/@img/sharp-*' -o -path '*/node_modules/@img/sharp-libvips-*' \) \
   -prune -exec rm -rf '{}' +
-find "%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modules/@anthropic-ai/claude-agent-sdk/vendor" -type d -name '%{claude_vendor_foreign_arch}' -prune -exec rm -rf '{}' +
+claude_vendor_dir="%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modules/@anthropic-ai/claude-agent-sdk/vendor"
+if [ -d "$claude_vendor_dir" ]; then
+  find "$claude_vendor_dir" -type d -name '%{claude_vendor_foreign_arch}' -prune -exec rm -rf '{}' +
+fi
 
 if [ -f "%{buildroot}%{_libexecdir}/%{name}/chrome-sandbox" ]; then
   chmod 4755 "%{buildroot}%{_libexecdir}/%{name}/chrome-sandbox"
