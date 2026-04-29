@@ -4,3 +4,5 @@ This repo is for rpmspec-files to package projects that I don't own for rpm-base
 current specs for:
 
 [T3 Code](https://github.com/pingdotgg/t3code) by [@pingdotgg](https://github.com/pingdotgg)
+
+[Plasma Studio](https://invent.kde.org/niccolove/plasma-studio) by [Niccolò Venerandi](https://invent.kde.org/niccolove)
