@@ -4,16 +4,17 @@
 %global gitlab_owner niccolove
 %global gitlab_repo plasma-studio
 %global release_tag %{app_version}
+%global source_url %{url}/-/archive/%{release_tag}/%{gitlab_repo}-%{release_tag}.tar.gz
 
 Name:           plasma-studio
 Version:        %{app_version}
-Release:        1%{?dist}
+Release:        3%{?dist}
 Summary:        Node-based Qt/QML editor for visual effects experiments
 License:        LicenseRef-Unknown
 URL:            https://invent.kde.org/%{gitlab_owner}/%{gitlab_repo}
-Source0:        %{url}/-/archive/%{release_tag}/%{gitlab_repo}-%{release_tag}.tar.gz#/%{name}-%{version}.tar.gz
 
 BuildRequires:  cmake
+BuildRequires:  curl
 BuildRequires:  desktop-file-utils
 BuildRequires:  ffmpeg-devel
 BuildRequires:  gcc-c++
@@ -41,7 +42,8 @@ effects, image and video processing nodes, shader-based filters, raw image
 inputs, and playback/rendering experiments.
 
 %prep
-%autosetup -n %{gitlab_repo}-%{release_tag}
+%setup -q -c -T -n %{gitlab_repo}-%{release_tag}
+curl --fail --location --retry 3 '%{source_url}' | tar -xz --strip-components=1
 
 sed -i \
   -e 's/pkg_check_modules(MPV REQUIRED mpv)/pkg_check_modules(MPV REQUIRED IMPORTED_TARGET mpv)/' \
@@ -66,6 +68,10 @@ if grep -q 'm_codecCtx->profile = FF_PROFILE_H264_HIGH;' RenderingHelper.cpp; th
     RenderingHelper.cpp
 fi
 
+sed -i \
+  -e 's/pageStack.initialPage: Page {/pageStack.initialPage: Kirigami.Page {/' \
+  testcases/nodegraph.qml
+
 %build
 mkdir -p %{__cmake_builddir}
 pushd %{__cmake_builddir}
@@ -87,6 +93,7 @@ install -pm0755 "%{__cmake_builddir}/testcases/nodegraph" \
 install -pm0755 "%{__cmake_builddir}/libstudioplugin.so" \
   "%{buildroot}%{_libexecdir}/%{name}/"
 cp -a "%{__cmake_builddir}/qml" "%{buildroot}%{_libexecdir}/%{name}/"
+cp -a "resources" "%{buildroot}%{_libexecdir}/%{name}/"
 
 install -d "%{buildroot}%{_bindir}"
 cat > "%{buildroot}%{_bindir}/%{name}" <<EOF
@@ -121,5 +128,11 @@ fi
 %files -f %{name}.files
 
 %changelog
+* Thu Apr 30 2026 BurningPho3nix <pr@burningpho3nix.xyz> - 0.0.0.1-3
+- Install bundled resources referenced by the QML node graph
+
+* Thu Apr 30 2026 BurningPho3nix <pr@burningpho3nix.xyz> - 0.0.0.1-2
+- Use a Kirigami page for the node graph entry point
+
 * Wed Apr 29 2026 BurningPho3nix <pr@burningpho3nix.xyz> - 0.0.0.1-1
 - Initial package for Plasma Studio 0.0.0.1
