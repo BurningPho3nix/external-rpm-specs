@@ -1,6 +1,6 @@
 %global debug_package %{nil}
 %undefine _disable_source_fetch
-%global app_version 0.0.0.1
+%global app_version 0.0.0.2
 %global gitlab_owner niccolove
 %global gitlab_repo plasma-studio
 %global release_tag %{app_version}
@@ -8,7 +8,7 @@
 
 Name:           plasma-studio
 Version:        %{app_version}
-Release:        3%{?dist}
+Release:        1%{?dist}
 Summary:        Node-based Qt/QML editor for visual effects experiments
 License:        LicenseRef-Unknown
 URL:            https://invent.kde.org/%{gitlab_owner}/%{gitlab_repo}
@@ -52,25 +52,19 @@ sed -i \
   CMakeLists.txt
 
 sed -i \
-  -e 's|engine.addImportPath(app.applicationDirPath() + "/../qml");|engine.addImportPath(QStringLiteral("%{_libexecdir}/%{name}/qml"));|' \
-  -e 's|engine.rootContext()->setContextProperty("buildDir", app.applicationDirPath() + "/..");|engine.rootContext()->setContextProperty("buildDir", QStringLiteral("%{_libexecdir}/%{name}"));|' \
-  testcases/main.cpp
+  -e '/engine.addImportPath(app.applicationDirPath() + "\/..\/qml");/d' \
+  -e '/engine.rootContext()->setContextProperty("buildDir", app.applicationDirPath() + "\/..");/d' \
+  app/main.cpp
 
-if grep -q 'QString qmlName = app.applicationName();' testcases/main.cpp; then
-  sed -i \
-    -e 's|QString qmlName = app.applicationName();|QString qmlName = QStringLiteral(QML_NAME);|' \
-    testcases/main.cpp
-fi
-
-if grep -q 'm_codecCtx->profile = FF_PROFILE_H264_HIGH;' RenderingHelper.cpp; then
+if grep -q 'm_codecCtx->profile = FF_PROFILE_H264_HIGH;' helpers/RenderingHelper.cpp; then
   sed -i \
     -e 's/m_codecCtx->profile = FF_PROFILE_H264_HIGH;/m_codecCtx->profile = AV_PROFILE_H264_HIGH;/' \
-    RenderingHelper.cpp
+    helpers/RenderingHelper.cpp
 fi
 
 sed -i \
   -e 's/pageStack.initialPage: Page {/pageStack.initialPage: Kirigami.Page {/' \
-  testcases/nodegraph.qml
+  app/main.qml
 
 %build
 mkdir -p %{__cmake_builddir}
@@ -80,40 +74,19 @@ pushd %{__cmake_builddir}
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=%{_prefix} \
   -DCMAKE_SKIP_RPATH=ON \
-  -DCMAKE_VERBOSE_MAKEFILE=ON
+  -DCMAKE_VERBOSE_MAKEFILE=ON \
+  -DQt6Quick_DIR=%{_libdir}/cmake/Qt6Quick
 %make_build
 popd
 
 %install
 rm -rf "%{buildroot}"
 
-install -d "%{buildroot}%{_libexecdir}/%{name}"
-install -pm0755 "%{__cmake_builddir}/testcases/nodegraph" \
-  "%{buildroot}%{_libexecdir}/%{name}/%{name}"
-install -pm0755 "%{__cmake_builddir}/libstudioplugin.so" \
-  "%{buildroot}%{_libexecdir}/%{name}/"
-cp -a "%{__cmake_builddir}/qml" "%{buildroot}%{_libexecdir}/%{name}/"
-cp -a "resources" "%{buildroot}%{_libexecdir}/%{name}/"
+pushd %{__cmake_builddir}
+%make_install
+popd
 
-install -d "%{buildroot}%{_bindir}"
-cat > "%{buildroot}%{_bindir}/%{name}" <<EOF
-#!/bin/sh
-export LD_LIBRARY_PATH=%{_libexecdir}/%{name}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}
-exec %{_libexecdir}/%{name}/%{name} "\$@"
-EOF
-chmod 0755 "%{buildroot}%{_bindir}/%{name}"
-
-install -d "%{buildroot}%{_datadir}/applications"
-cat > "%{buildroot}%{_datadir}/applications/%{name}.desktop" <<EOF
-[Desktop Entry]
-Name=Plasma Studio
-Comment=Node-based editor for visual effects experiments
-Exec=%{_bindir}/%{name}
-Terminal=false
-Type=Application
-Icon=applications-graphics
-Categories=Graphics;AudioVideo;Qt;
-EOF
+ln -s plasmastudio "%{buildroot}%{_bindir}/%{name}"
 
 find "%{buildroot}" \( -type f -o -type l \) -printf '/%%P\n' | sort > %{name}.files
 
@@ -128,6 +101,10 @@ fi
 %files -f %{name}.files
 
 %changelog
+* Mon May 11 2026 BurningPho3nix <pr@burningpho3nix.xyz> - 0.0.0.2-1
+- Update to Plasma Studio 0.0.0.2
+- Use upstream app install rules and keep a plasma-studio command alias
+
 * Thu Apr 30 2026 BurningPho3nix <pr@burningpho3nix.xyz> - 0.0.0.1-3
 - Install bundled resources referenced by the QML node graph
 
