@@ -8,7 +8,7 @@
 
 Name:           plasma-studio
 Version:        %{app_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Node-based Qt/QML editor for visual effects experiments
 License:        LicenseRef-Unknown
 URL:            https://invent.kde.org/%{gitlab_owner}/%{gitlab_repo}
@@ -25,7 +25,6 @@ BuildRequires:  mesa-libEGL-devel
 BuildRequires:  mpv-devel
 BuildRequires:  pkgconfig
 BuildRequires:  qt6-qtbase-devel
-BuildRequires:  qt6-qtbase-private-devel
 BuildRequires:  qt6-qtdeclarative-devel
 BuildRequires:  qt6-qtmultimedia-devel
 BuildRequires:  qt6-qtshadertools-devel
@@ -46,6 +45,8 @@ inputs, and playback/rendering experiments.
 curl --fail --location --retry 3 '%{source_url}' | tar -xz --strip-components=1
 
 sed -i \
+  -e 's/ GuiPrivate//' \
+  -e '/^[[:space:]]*Qt6::GuiPrivate$/d' \
   -e 's/pkg_check_modules(MPV REQUIRED mpv)/pkg_check_modules(MPV REQUIRED IMPORTED_TARGET mpv)/' \
   -e 's/pkg_check_modules(LIBRAW REQUIRED libraw)/pkg_check_modules(LIBRAW REQUIRED IMPORTED_TARGET libraw)\npkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil libavfilter)\npkg_check_modules(EGL REQUIRED IMPORTED_TARGET egl)\npkg_check_modules(LIBDRM REQUIRED IMPORTED_TARGET libdrm)/' \
   -e 's/${LIBRAW_LIBRARIES}/${LIBRAW_LIBRARIES}\n    PkgConfig::MPV\n    PkgConfig::LIBRAW\n    PkgConfig::FFMPEG\n    PkgConfig::EGL\n    PkgConfig::LIBDRM/' \
@@ -101,6 +102,9 @@ fi
 %files -f %{name}.files
 
 %changelog
+* Sat May 16 2026 BurningPho3nix <pr@burningpho3nix.xyz> - 0.0.0.2-2
+- Drop unused Qt GuiPrivate linkage to avoid Qt private ABI dependencies
+
 * Mon May 11 2026 BurningPho3nix <pr@burningpho3nix.xyz> - 0.0.0.2-1
 - Update to Plasma Studio 0.0.0.2
 - Use upstream app install rules and keep a plasma-studio command alias
