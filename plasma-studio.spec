@@ -8,7 +8,7 @@
 
 Name:           plasma-studio
 Version:        %{app_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Node-based Qt/QML editor for visual effects experiments
 License:        LicenseRef-Unknown
 URL:            https://invent.kde.org/%{gitlab_owner}/%{gitlab_repo}
@@ -25,6 +25,7 @@ BuildRequires:  mesa-libEGL-devel
 BuildRequires:  mpv-devel
 BuildRequires:  pkgconfig
 BuildRequires:  qt6-qtbase-devel
+BuildRequires:  qt6-qtbase-private-devel
 BuildRequires:  qt6-qtdeclarative-devel
 BuildRequires:  qt6-qtmultimedia-devel
 BuildRequires:  qt6-qtshadertools-devel
@@ -102,6 +103,9 @@ fi
 %files -f %{name}.files
 
 %changelog
+* Mon May 18 2026 BurningPho3nix <pr@burningpho3nix.xyz> - 0.0.0.2-3
+- Add Qt private devel build dependency for Qt Wayland metatype data
+
 * Sat May 16 2026 BurningPho3nix <pr@burningpho3nix.xyz> - 0.0.0.2-2
 - Drop unused Qt GuiPrivate linkage to avoid Qt private ABI dependencies
 
