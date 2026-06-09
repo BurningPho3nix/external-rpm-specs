@@ -1,20 +1,18 @@
 %global debug_package %{nil}
 %global __requires_exclude ^lib(dl\\.so\\.2|pthread\\.so\\.0)\\(GLIBC_[^)]*\\)\\(64bit\\)$
 %undefine _disable_source_fetch
-%global app_version 0.0.24
-%global bun_version 1.3.11
+%global app_version 0.0.27
+%global pnpm_version 10.24.0
 %global github_owner pingdotgg
 %global github_repo t3code
 %global release_tag v%{app_version}
 
 %ifarch x86_64
 %global electron_arch x64
-%global bun_pkg bun-linux-x64-baseline
 %global claude_vendor_foreign_arch arm64-linux
 %endif
 %ifarch aarch64
 %global electron_arch arm64
-%global bun_pkg bun-linux-aarch64
 %global claude_vendor_foreign_arch x64-linux
 %endif
 %{!?electron_arch:%{error:Unsupported arch %{_target_cpu}; supported arches are x86_64 and aarch64}}
@@ -26,11 +24,10 @@ Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
 Source0:        https://github.com/%{github_owner}/%{github_repo}/archive/refs/tags/%{release_tag}.tar.gz#/%{name}-%{version}.tar.gz
-Source1:        https://registry.npmjs.org/%40oven/%{bun_pkg}/-/%{bun_pkg}-%{bun_version}.tgz#/%{bun_pkg}-%{bun_version}.tgz
+Source1:        https://registry.npmjs.org/pnpm/-/pnpm-%{pnpm_version}.tgz#/pnpm-%{pnpm_version}.tgz
 
 BuildArch:      %{_target_cpu}
 
-BuildRequires:  curl
 BuildRequires:  gcc-c++
 BuildRequires:  make
 BuildRequires:  nodejs(engine) >= 24.13.1
@@ -50,10 +47,11 @@ upstream release source tarball and installs it as a regular application.
 %build
 export HOME="%{_builddir}/%{name}-%{version}-home"
 export npm_config_cache="%{_builddir}/%{name}-%{version}-npm-cache"
-export BUN_INSTALL_CACHE_DIR="%{_builddir}/%{name}-%{version}-bun-cache"
+export PNPM_HOME="%{_builddir}/%{name}-%{version}-pnpm-home"
+export pnpm_config_store_dir="%{_builddir}/%{name}-%{version}-pnpm-store"
 export PYTHON="%{__python3}"
 export npm_config_python="%{__python3}"
-mkdir -p "$HOME" "$npm_config_cache" "$BUN_INSTALL_CACHE_DIR"
+mkdir -p "$HOME" "$npm_config_cache" "$PNPM_HOME" "$pnpm_config_store_dir"
 
 node_major="$(node -p 'process.versions.node.split(".")[0]')"
 for modules_root in "/usr/lib/node_modules_${node_major}" /usr/lib/node_modules; do
@@ -66,18 +64,28 @@ done
 test -n "$node_gyp_js"
 test -d "$node_gyp_bin_dir"
 
-bun_root="%{_builddir}/%{name}-%{version}-bun"
-rm -rf "$bun_root"
-mkdir -p "$bun_root"
-tar -xzf "%{SOURCE1}" -C "$bun_root"
-if [ -x "$bun_root/package/bin/bun" ] && [ ! -e "$bun_root/package/bin/bunx" ]; then
-  ln -s bun "$bun_root/package/bin/bunx"
-fi
-export PATH="$bun_root/package/bin:$node_gyp_bin_dir:$PATH"
+pnpm_root="%{_builddir}/%{name}-%{version}-pnpm"
+rm -rf "$pnpm_root"
+mkdir -p "$pnpm_root"
+tar -xzf "%{SOURCE1}" -C "$pnpm_root"
+pnpm_cli="$pnpm_root/package/bin/pnpm.cjs"
+pnpx_cli="$pnpm_root/package/bin/pnpx.cjs"
+test -f "$pnpm_cli"
+test -f "$pnpx_cli"
+cat > "$PNPM_HOME/pnpm" <<EOF
+#!/bin/sh
+exec node "$pnpm_cli" "\$@"
+EOF
+cat > "$PNPM_HOME/pnpx" <<EOF
+#!/bin/sh
+exec node "$pnpx_cli" "\$@"
+EOF
+chmod 0755 "$PNPM_HOME/pnpm" "$PNPM_HOME/pnpx"
+export PATH="$PNPM_HOME:$node_gyp_bin_dir:$PATH"
 export npm_config_node_gyp="$node_gyp_js"
 test -f "$npm_config_node_gyp"
 
-bun install --frozen-lockfile
+pnpm install --frozen-lockfile
 
 # The staged production install inside `dist:desktop:artifact` must rebuild
 # native Electron modules from source instead of bundling upstream prebuilts.
@@ -93,7 +101,7 @@ export npm_config_build_from_source=true
 export npm_config_platform=linux
 export npm_config_libc=glibc
 export SHARP_FORCE_GLOBAL_LIBVIPS=1
-bun run dist:desktop:artifact -- \
+pnpm run dist:desktop:artifact \
   --platform linux \
   --target tar.gz \
   --arch %{electron_arch} \
@@ -181,6 +189,10 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Mon Jun 08 2026 Codex <codex@openai.com> - 0.0.25-1
+- Update to 0.0.25
+- Switch the build from Bun to the upstream pinned pnpm package manager
+
 * Sat Mar 07 2026 Codex <codex@openai.com> - 0.0.4-4
 - Use `assets/prod/black-universal-1024.png` as the installed desktop icon
 
