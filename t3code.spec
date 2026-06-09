@@ -19,7 +19,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -30,9 +30,11 @@ BuildArch:      %{_target_cpu}
 
 BuildRequires:  gcc-c++
 BuildRequires:  make
-BuildRequires:  nodejs(engine) >= 24.13.1
-BuildRequires:  npm
+BuildRequires:  nodejs24 >= 24.13.1
+BuildRequires:  nodejs24-bin
+BuildRequires:  nodejs24-npm-bin
 BuildRequires:  python3
+BuildRequires:  ImageMagick
 BuildRequires:  vips-devel
 Requires:       xdg-utils
 
@@ -53,7 +55,9 @@ export PYTHON="%{__python3}"
 export npm_config_python="%{__python3}"
 mkdir -p "$HOME" "$npm_config_cache" "$PNPM_HOME" "$pnpm_config_store_dir"
 
-node_major="$(node -p 'process.versions.node.split(".")[0]')"
+node_cmd="/usr/bin/node-24"
+test -x "$node_cmd"
+node_major="$("$node_cmd" -p 'process.versions.node.split(".")[0]')"
 for modules_root in "/usr/lib/node_modules_${node_major}" /usr/lib/node_modules; do
   if [ -f "$modules_root/npm/node_modules/node-gyp/bin/node-gyp.js" ]; then
     node_gyp_js="$modules_root/npm/node_modules/node-gyp/bin/node-gyp.js"
@@ -74,11 +78,11 @@ test -f "$pnpm_cli"
 test -f "$pnpx_cli"
 cat > "$PNPM_HOME/pnpm" <<EOF
 #!/bin/sh
-exec node "$pnpm_cli" "\$@"
+exec "$node_cmd" "$pnpm_cli" "\$@"
 EOF
 cat > "$PNPM_HOME/pnpx" <<EOF
 #!/bin/sh
-exec node "$pnpx_cli" "\$@"
+exec "$node_cmd" "$pnpx_cli" "\$@"
 EOF
 chmod 0755 "$PNPM_HOME/pnpm" "$PNPM_HOME/pnpx"
 export PATH="$PNPM_HOME:$node_gyp_bin_dir:$PATH"
@@ -89,7 +93,7 @@ pnpm install --frozen-lockfile
 
 # The staged production install inside `dist:desktop:artifact` must rebuild
 # native Electron modules from source instead of bundling upstream prebuilts.
-electron_version="$(node -p 'require("./apps/desktop/package.json").dependencies.electron')"
+electron_version="$("$node_cmd" -p 'require("./apps/desktop/package.json").dependencies.electron')"
 test -n "$electron_version"
 pkg-config --modversion vips-cpp
 export npm_config_runtime=electron
@@ -189,6 +193,10 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Wed Jun 10 2026 Codex <codex@openai.com> - 0.0.27-2
+- Add ImageMagick build dependency for Linux icon generation
+- Use Fedora's Node.js 24 runtime and npm symlinks consistently during the build
+
 * Mon Jun 08 2026 Codex <codex@openai.com> - 0.0.25-1
 - Update to 0.0.25
 - Switch the build from Bun to the upstream pinned pnpm package manager
