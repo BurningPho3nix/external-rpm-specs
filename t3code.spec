@@ -19,7 +19,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -83,7 +83,11 @@ cat > "$PNPM_HOME/pnpx" <<EOF
 #!/bin/sh
 exec "$node_cmd" "$pnpx_cli" "\$@"
 EOF
-chmod 0755 "$PNPM_HOME/pnpm" "$PNPM_HOME/pnpx"
+cat > "$PNPM_HOME/node" <<EOF
+#!/bin/sh
+exec "$node_cmd" "\$@"
+EOF
+chmod 0755 "$PNPM_HOME/pnpm" "$PNPM_HOME/pnpx" "$PNPM_HOME/node"
 export PATH="$PNPM_HOME:$node_gyp_bin_dir:$PATH"
 export npm_config_node_gyp="$node_gyp_js"
 test -f "$npm_config_node_gyp"
@@ -192,6 +196,9 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Wed Jul 01 2026 Codex <codex@openai.com> - 0.0.28-4
+- Add build-time node shim for package scripts that call unversioned node
+
 * Wed Jul 01 2026 Codex <codex@openai.com> - 0.0.28-3
 - Use Fedora's portable nodejs24-npm dependency instead of Fedora 44-only bin subpackages
 
