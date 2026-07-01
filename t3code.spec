@@ -1,5 +1,5 @@
 %global debug_package %{nil}
-%global __requires_exclude ^lib(dl\\.so\\.2|pthread\\.so\\.0)\\(GLIBC_[^)]*\\)\\(64bit\\)$
+%global __requires_exclude ^(/usr/bin/dotslash|libc\\.so\\(\\)\\(64bit\\)|lib(dl\\.so\\.2|pthread\\.so\\.0)\\(GLIBC_[^)]*\\)\\(64bit\\))$
 %undefine _disable_source_fetch
 %global app_version 0.0.28
 %global pnpm_version 10.24.0
@@ -19,7 +19,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -193,6 +193,9 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Wed Jul 01 2026 Codex <codex@openai.com> - 0.0.28-2
+- Exclude bundled DotSlash and generic libc auto-requires from packaged agent tooling
+
 * Wed Jun 10 2026 Codex <codex@openai.com> - 0.0.27-2
 - Add ImageMagick build dependency for Linux icon generation
 - Use Fedora's Node.js 24 runtime and npm symlinks consistently during the build
