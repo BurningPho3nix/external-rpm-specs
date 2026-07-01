@@ -19,7 +19,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -31,8 +31,7 @@ BuildArch:      %{_target_cpu}
 BuildRequires:  gcc-c++
 BuildRequires:  make
 BuildRequires:  nodejs24 >= 24.13.1
-BuildRequires:  nodejs24-bin
-BuildRequires:  nodejs24-npm-bin
+BuildRequires:  nodejs24-npm
 BuildRequires:  python3
 BuildRequires:  ImageMagick
 BuildRequires:  vips-devel
@@ -193,6 +192,9 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Wed Jul 01 2026 Codex <codex@openai.com> - 0.0.28-3
+- Use Fedora's portable nodejs24-npm dependency instead of Fedora 44-only bin subpackages
+
 * Wed Jul 01 2026 Codex <codex@openai.com> - 0.0.28-2
 - Exclude bundled DotSlash and generic libc auto-requires from packaged agent tooling
 
