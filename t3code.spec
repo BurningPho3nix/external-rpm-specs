@@ -19,7 +19,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -140,6 +140,11 @@ find "%{buildroot}%{_libexecdir}/%{name}" -type d \
 claude_vendor_dir="%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modules/@anthropic-ai/claude-agent-sdk/vendor"
 if [ -d "$claude_vendor_dir" ]; then
   find "$claude_vendor_dir" -type d -name '%{claude_vendor_foreign_arch}' -prune -exec rm -rf '{}' +
+  find "$claude_vendor_dir" -type d -iname '*musl*' -prune -exec rm -rf '{}' +
+fi
+if find "%{buildroot}%{_libexecdir}/%{name}" -type f -print0 | xargs -0 file | grep -qi musl; then
+  echo "musl-linked files remain in %{_libexecdir}/%{name}; prune or rebuild them for glibc" >&2
+  exit 1
 fi
 
 if [ -f "%{buildroot}%{_libexecdir}/%{name}/chrome-sandbox" ]; then
@@ -196,6 +201,10 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Thu Jul 02 2026 Codex <codex@openai.com> - 0.0.28-5
+- Prune bundled musl vendor binaries so the Fedora package does not require an
+  unprovided musl libc soname
+
 * Wed Jul 01 2026 Codex <codex@openai.com> - 0.0.28-4
 - Add build-time node shim for package scripts that call unversioned node
 
