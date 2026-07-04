@@ -23,7 +23,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -141,6 +141,8 @@ rm -rf "%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modu
 find "%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modules" -type d \
   \( -path '*/prebuilds/linux-%{foreign_electron_arch}' -o -path '*/linux64-bin' \) \
   -prune -exec rm -rf '{}' +
+find "%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modules" -type d \
+  -iname '*musl*' -prune -exec rm -rf '{}' +
 find "%{buildroot}%{_libexecdir}/%{name}" -type d \
   \( -path '*/node_modules/@img/sharp-*' -o -path '*/node_modules/@img/sharp-libvips-*' \) \
   -prune -exec rm -rf '{}' +
@@ -149,14 +151,17 @@ if [ -d "$claude_vendor_dir" ]; then
   find "$claude_vendor_dir" -type d -name '%{claude_vendor_foreign_arch}' -prune -exec rm -rf '{}' +
   find "$claude_vendor_dir" -type d -iname '*musl*' -prune -exec rm -rf '{}' +
 fi
-if find "%{buildroot}%{_libexecdir}/%{name}" -type f -print0 | xargs -0 file | grep -qi musl; then
+file_manifest="$(mktemp)"
+find "%{buildroot}%{_libexecdir}/%{name}" -type f -print0 | xargs -0 file > "$file_manifest"
+if grep -i musl "$file_manifest"; then
   echo "musl-linked files remain in %{_libexecdir}/%{name}; prune or rebuild them for glibc" >&2
   exit 1
 fi
-if find "%{buildroot}%{_libexecdir}/%{name}" -type f -print0 | xargs -0 file | grep -E 'ELF .* (x86-64|ARM aarch64)' | grep -Fv '%{rpm_file_arch}'; then
+if grep -E 'ELF .* (x86-64|ARM aarch64)' "$file_manifest" | grep -Fv '%{rpm_file_arch}'; then
   echo "foreign-architecture ELF files remain in %{_libexecdir}/%{name}; prune or rebuild them for %{_target_cpu}" >&2
   exit 1
 fi
+rm -f "$file_manifest"
 
 if [ -f "%{buildroot}%{_libexecdir}/%{name}/chrome-sandbox" ]; then
   chmod 4755 "%{buildroot}%{_libexecdir}/%{name}/chrome-sandbox"
@@ -212,6 +217,9 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Sat Jul 04 2026 Codex <codex@openai.com> - 0.0.28-8
+- Make bundled native file checks robust and prune musl dependency directories
+
 * Sat Jul 04 2026 Codex <codex@openai.com> - 0.0.28-7
 - Prune foreign-architecture Linux prebuilds from bundled node modules
 
