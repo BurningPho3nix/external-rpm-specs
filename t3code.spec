@@ -9,17 +9,21 @@
 
 %ifarch x86_64
 %global electron_arch x64
+%global foreign_electron_arch arm64
 %global claude_vendor_foreign_arch arm64-linux
+%global rpm_file_arch x86-64
 %endif
 %ifarch aarch64
 %global electron_arch arm64
+%global foreign_electron_arch x64
 %global claude_vendor_foreign_arch x64-linux
+%global rpm_file_arch ARM aarch64
 %endif
 %{!?electron_arch:%{error:Unsupported arch %{_target_cpu}; supported arches are x86_64 and aarch64}}
 
 Name:           t3code
 Version:        %{app_version}
-Release:        5%{?dist}
+Release:        7%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -134,6 +138,9 @@ cp -a "$appdir"/. "%{buildroot}%{_libexecdir}/%{name}/"
 # Drop unused native addons that trigger invalid RPM deps on glibc-based Fedora.
 find "%{buildroot}%{_libexecdir}/%{name}" -type f -name '*.musl.node' -delete
 rm -rf "%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modules/node-pty/prebuilds"
+find "%{buildroot}%{_libexecdir}/%{name}/resources/app.asar.unpacked/node_modules" -type d \
+  \( -path '*/prebuilds/linux-%{foreign_electron_arch}' -o -path '*/linux64-bin' \) \
+  -prune -exec rm -rf '{}' +
 find "%{buildroot}%{_libexecdir}/%{name}" -type d \
   \( -path '*/node_modules/@img/sharp-*' -o -path '*/node_modules/@img/sharp-libvips-*' \) \
   -prune -exec rm -rf '{}' +
@@ -144,6 +151,10 @@ if [ -d "$claude_vendor_dir" ]; then
 fi
 if find "%{buildroot}%{_libexecdir}/%{name}" -type f -print0 | xargs -0 file | grep -qi musl; then
   echo "musl-linked files remain in %{_libexecdir}/%{name}; prune or rebuild them for glibc" >&2
+  exit 1
+fi
+if find "%{buildroot}%{_libexecdir}/%{name}" -type f -print0 | xargs -0 file | grep -E 'ELF .* (x86-64|ARM aarch64)' | grep -Fv '%{rpm_file_arch}'; then
+  echo "foreign-architecture ELF files remain in %{_libexecdir}/%{name}; prune or rebuild them for %{_target_cpu}" >&2
   exit 1
 fi
 
@@ -201,6 +212,9 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Sat Jul 04 2026 Codex <codex@openai.com> - 0.0.28-7
+- Prune foreign-architecture Linux prebuilds from bundled node modules
+
 * Thu Jul 02 2026 Codex <codex@openai.com> - 0.0.28-5
 - Prune bundled musl vendor binaries so the Fedora package does not require an
   unprovided musl libc soname
