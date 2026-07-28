@@ -23,7 +23,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        8%{?dist}
+Release:        1%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -39,6 +39,7 @@ BuildRequires:  nodejs24-npm
 BuildRequires:  python3
 BuildRequires:  ImageMagick
 BuildRequires:  vips-devel
+BuildRequires:  git
 Requires:       xdg-utils
 
 %description
