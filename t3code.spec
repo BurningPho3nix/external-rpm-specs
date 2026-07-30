@@ -23,7 +23,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -32,6 +32,7 @@ Source1:        https://registry.npmjs.org/pnpm/-/pnpm-%{pnpm_version}.tgz#/pnpm
 
 BuildArch:      %{_target_cpu}
 
+BuildRequires:  cargo
 BuildRequires:  gcc-c++
 BuildRequires:  make
 BuildRequires:  nodejs24 >= 24.13.1
@@ -218,6 +219,9 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Thu Jul 30 2026 Codex <codex@openai.com> - 0.0.31-2
+- Add Cargo for building the native resource monitor
+
 * Sat Jul 04 2026 Codex <codex@openai.com> - 0.0.28-8
 - Make bundled native file checks robust and prune musl dependency directories
 
