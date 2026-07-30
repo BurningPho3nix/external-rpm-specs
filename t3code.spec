@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 %global __requires_exclude ^(/usr/bin/dotslash|libc\\.so\\(\\)\\(64bit\\)|lib(dl\\.so\\.2|pthread\\.so\\.0)\\(GLIBC_[^)]*\\)\\(64bit\\))$
 %undefine _disable_source_fetch
-%global app_version 0.0.30
+%global app_version 0.0.31
 %global pnpm_version 11.10.0
 %global github_owner pingdotgg
 %global github_repo t3code
