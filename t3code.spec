@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 %global __requires_exclude ^(/usr/bin/dotslash|libc\\.so\\(\\)\\(64bit\\)|lib(dl\\.so\\.2|pthread\\.so\\.0)\\(GLIBC_[^)]*\\)\\(64bit\\))$
 %undefine _disable_source_fetch
-%global app_version 0.0.31
+%global app_version 0.0.33
 %global pnpm_version 11.10.0
 %global github_owner pingdotgg
 %global github_repo t3code
@@ -23,7 +23,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        2%{?dist}
+Release:        1%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -219,6 +219,9 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Tue Aug 18 2026 Codex <codex@openai.com> - 0.0.33-1
+- Update to the latest non-nightly upstream release
+
 * Thu Jul 30 2026 Codex <codex@openai.com> - 0.0.31-2
 - Add Cargo for building the native resource monitor
 
