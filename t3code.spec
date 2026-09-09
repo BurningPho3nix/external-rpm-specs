@@ -1,7 +1,7 @@
 %global debug_package %{nil}
 %global __requires_exclude ^(/usr/bin/dotslash|libc\\.so\\(\\)\\(64bit\\)|lib(dl\\.so\\.2|pthread\\.so\\.0)\\(GLIBC_[^)]*\\)\\(64bit\\))$
 %undefine _disable_source_fetch
-%global app_version 0.0.38
+%global app_version 0.0.40
 %global pnpm_version 11.10.0
 %global github_owner pingdotgg
 %global github_repo t3code
@@ -23,7 +23,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -39,6 +39,7 @@ BuildRequires:  nodejs24 >= 24.13.1
 BuildRequires:  nodejs24-npm
 BuildRequires:  python3
 BuildRequires:  ImageMagick
+BuildRequires:  libsecret-devel
 BuildRequires:  vips-devel
 BuildRequires:  git
 Requires:       xdg-utils
@@ -65,11 +66,13 @@ test -x "$node_cmd"
 node_major="$("$node_cmd" -p 'process.versions.node.split(".")[0]')"
 for modules_root in "/usr/lib/node_modules_${node_major}" /usr/lib/node_modules; do
   if [ -f "$modules_root/npm/node_modules/node-gyp/bin/node-gyp.js" ]; then
+    npm_cli="$modules_root/npm/bin/npm-cli.js"
     node_gyp_js="$modules_root/npm/node_modules/node-gyp/bin/node-gyp.js"
     node_gyp_bin_dir="$modules_root/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin"
     break
   fi
 done
+test -f "$npm_cli"
 test -n "$node_gyp_js"
 test -d "$node_gyp_bin_dir"
 
@@ -93,7 +96,11 @@ cat > "$PNPM_HOME/node" <<EOF
 #!/bin/sh
 exec "$node_cmd" "\$@"
 EOF
-chmod 0755 "$PNPM_HOME/pnpm" "$PNPM_HOME/pnpx" "$PNPM_HOME/node"
+cat > "$PNPM_HOME/npm" <<EOF
+#!/bin/sh
+exec "$node_cmd" "$npm_cli" "\$@"
+EOF
+chmod 0755 "$PNPM_HOME/pnpm" "$PNPM_HOME/pnpx" "$PNPM_HOME/node" "$PNPM_HOME/npm"
 export PATH="$PNPM_HOME:$node_gyp_bin_dir:$PATH"
 export npm_config_node_gyp="$node_gyp_js"
 test -f "$npm_config_node_gyp"
@@ -219,6 +226,13 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+* Wed Sep 09 2026 Codex <codex@openai.com> - 0.0.40-2
+- Add the libsecret development dependency required by the desktop build
+- Add an npm wrapper for native dependency build fallbacks on Fedora 43
+
+* Wed Sep 09 2026 Codex <codex@openai.com> - 0.0.40-1
+- Update to the latest non-nightly upstream release
+
 * Sun Sep 06 2026 Codex <codex@openai.com> - 0.0.38-1
 - Update to the latest non-nightly upstream release
 
