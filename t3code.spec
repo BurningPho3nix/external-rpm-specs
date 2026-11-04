@@ -2,19 +2,22 @@
 %global __requires_exclude ^(/usr/bin/dotslash|libc\\.so\\(\\)\\(64bit\\)|lib(dl\\.so\\.2|pthread\\.so\\.0)\\(GLIBC_[^)]*\\)\\(64bit\\))$
 %undefine _disable_source_fetch
 %global app_version 0.1.7
-%global pnpm_version 12,14.0
+%global pnpm_version 12.14.0
+%global node_version 26.12.1
 %global github_owner pingdotgg
 %global github_repo t3code
 %global release_tag v%{app_version}
 
 %ifarch x86_64
 %global electron_arch x64
+%global node_source %{SOURCE2}
 %global foreign_electron_arch arm64
 %global claude_vendor_foreign_arch arm64-linux
 %global rpm_file_arch x86-64
 %endif
 %ifarch aarch64
 %global electron_arch arm64
+%global node_source %{SOURCE3}
 %global foreign_electron_arch x64
 %global claude_vendor_foreign_arch x64-linux
 %global rpm_file_arch ARM aarch64
@@ -23,20 +26,24 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
 Source0:        https://github.com/%{github_owner}/%{github_repo}/archive/refs/tags/%{release_tag}.tar.gz#/%{name}-%{version}.tar.gz
 Source1:        https://registry.npmjs.org/pnpm/-/pnpm-%{pnpm_version}.tgz#/pnpm-%{pnpm_version}.tgz
+# Include both architectures so the same SRPM can build on either target.
+Source2:        https://nodejs.org/dist/v%{node_version}/node-v%{node_version}-linux-x64.tar.xz
+Source3:        https://nodejs.org/dist/v%{node_version}/node-v%{node_version}-linux-arm64.tar.xz
+Source4:        https://nodejs.org/dist/v%{node_version}/SHASUMS256.txt#/node-v%{node_version}-SHASUMS256.txt
 
 BuildArch:      %{_target_cpu}
 
 BuildRequires:  cargo
 BuildRequires:  gcc-c++
 BuildRequires:  make
-BuildRequires:  nodejs24 >= 24.13.1
 BuildRequires:  nodejs24-npm
+BuildRequires:  xz
 BuildRequires:  python3
 BuildRequires:  ImageMagick
 BuildRequires:  libsecret-devel
@@ -61,10 +68,19 @@ export PYTHON="%{__python3}"
 export npm_config_python="%{__python3}"
 mkdir -p "$HOME" "$npm_config_cache" "$PNPM_HOME" "$pnpm_config_store_dir"
 
-node_cmd="/usr/bin/node-24"
+# Upstream pins Node.js 26, which is unavailable in some target Fedora repos.
+# Use the official runtime only for the build; it is not installed in the RPM.
+node_archive="$(basename "%{node_source}")"
+node_checksum="$(awk -v archive="$node_archive" '$2 == archive { print $1 }' "%{SOURCE4}")"
+test -n "$node_checksum"
+printf '%s  %s\n' "$node_checksum" "%{node_source}" | sha256sum --check --strict
+node_root="%{_builddir}/%{name}-%{version}-node"
+mkdir -p "$node_root"
+tar -xJf "%{node_source}" -C "$node_root" --strip-components=1
+node_cmd="$node_root/bin/node"
 test -x "$node_cmd"
-node_major="$("$node_cmd" -p 'process.versions.node.split(".")[0]')"
-for modules_root in "/usr/lib/node_modules_${node_major}" /usr/lib/node_modules; do
+test "$("$node_cmd" -p 'process.versions.node')" = "%{node_version}"
+for modules_root in /usr/lib/node_modules_24 /usr/lib/node_modules; do
   if [ -f "$modules_root/npm/node_modules/node-gyp/bin/node-gyp.js" ]; then
     npm_cli="$modules_root/npm/bin/npm-cli.js"
     node_gyp_js="$modules_root/npm/node_modules/node-gyp/bin/node-gyp.js"
@@ -80,8 +96,8 @@ pnpm_root="%{_builddir}/%{name}-%{version}-pnpm"
 rm -rf "$pnpm_root"
 mkdir -p "$pnpm_root"
 tar -xzf "%{SOURCE1}" -C "$pnpm_root"
-pnpm_cli="$pnpm_root/package/bin/pnpm.cjs"
-pnpx_cli="$pnpm_root/package/bin/pnpx.cjs"
+pnpm_cli="$pnpm_root/package/bin/pnpm.mjs"
+pnpx_cli="$pnpm_root/package/bin/pnpx.mjs"
 test -f "$pnpm_cli"
 test -f "$pnpx_cli"
 cat > "$PNPM_HOME/pnpm" <<EOF
@@ -226,6 +242,11 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+
+* Wed Nov 04 2026 Codex <codex@openai.com> - 0.1.7-2
+- Fix the pnpm 12.14.0 source URL
+- Use pnpm 12's module entry points
+- Use the upstream-pinned Node.js 26.12.1 build runtime on all Fedora targets
 
 * Tue Oct 20 2026 Codex <codex@openai.com> - 0.1.0-1
 - Update to the latest non-nightly upstream release
