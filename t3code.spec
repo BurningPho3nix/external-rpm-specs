@@ -26,7 +26,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -49,6 +49,14 @@ BuildRequires:  ImageMagick
 BuildRequires:  libsecret-devel
 BuildRequires:  vips-devel
 BuildRequires:  git
+# The official Node.js binary needs libatomic on Fedora 43 x86_64.
+BuildRequires:  libatomic
+# Upstream runs the packaged Electron binary to generate the server cache.
+BuildRequires:  alsa-lib
+BuildRequires:  gtk3
+BuildRequires:  mesa-libgbm
+BuildRequires:  nspr
+BuildRequires:  nss
 Requires:       xdg-utils
 
 %description
@@ -242,6 +250,10 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+
+* Fri Nov 13 2026 Codex <codex@openai.com> - 0.1.9-2
+- Add the Electron runtime libraries needed for server compile cache generation
+- Add libatomic for the official Node.js build runtime on Fedora 43 x86_64
 
 * Fri Nov 13 2026 Codex <codex@openai.com> - 0.1.9-1
 - Update to the latest non-nightly upstream release
