@@ -1,9 +1,9 @@
 %global debug_package %{nil}
 %global __requires_exclude ^(/usr/bin/dotslash|libc\\.so\\(\\)\\(64bit\\)|lib(dl\\.so\\.2|pthread\\.so\\.0)\\(GLIBC_[^)]*\\)\\(64bit\\))$
 %undefine _disable_source_fetch
-%global app_version 0.1.9
+%global app_version 0.1.11
 %global pnpm_version 12.14.0
-%global node_version 26.12.1
+%global node_version 26.13.1
 %global github_owner pingdotgg
 %global github_repo t3code
 %global release_tag v%{app_version}
@@ -26,7 +26,7 @@
 
 Name:           t3code
 Version:        %{app_version}
-Release:        2%{?dist}
+Release:        1%{?dist}
 Summary:        Desktop UI for code agents such as Codex
 License:        MIT
 URL:            https://github.com/%{github_owner}/%{github_repo}
@@ -250,6 +250,10 @@ install -pm0644 "assets/prod/black-universal-1024.png" \
 %{_libexecdir}/%{name}
 
 %changelog
+
+* Sat Nov 21 2026 Codex <codex@openai.com> - 0.1.11-1
+- Update to the latest non-nightly upstream release
+- Use the upstream-pinned Node.js 26.13.1 build runtime
 
 * Fri Nov 13 2026 Codex <codex@openai.com> - 0.1.9-2
 - Add the Electron runtime libraries needed for server compile cache generation
